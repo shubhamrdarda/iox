@@ -1,33 +1,38 @@
+# Source for Ruby gems
 source "https://rubygems.org"
-# Hello! This is where you manage which Jekyll version is used to run.
-# When you want to use a different version, change it below, save the
-# file and run `bundle install`. Run Jekyll with `bundle exec`, like so:
-#
-#     bundle exec jekyll serve
-#
-# This will help ensure the proper Jekyll version is running.
-# Happy Jekylling!
+
+# Core Jekyll engine for static site generation
 gem "jekyll", "~> 4.4.1"
-# This is the default theme for new Jekyll sites. You may change this to anything you like.
-gem "minima", "~> 2.5"
-# If you want to use GitHub Pages, remove the "gem "jekyll"" above and
-# uncomment the line below. To upgrade, run `bundle update github-pages`.
-# gem "github-pages", group: :jekyll_plugins
-# If you have any plugins, put them here!
+
+# GitHub Pages integration (includes Jekyll and supported plugins)
+# Uncomment if deploying via GitHub Pages
+gem "github-pages", group: :jekyll_plugins
+
+# Jekyll plugin group
 group :jekyll_plugins do
-  gem "jekyll-feed", "~> 0.12"
+  # Generates sitemap.xml for SEO and search engine indexing
+  gem "jekyll-sitemap"
+  # Required for Faraday v2.0+ middleware
+  gem "faraday-retry"
 end
 
-# Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
-# and associated library.
-platforms :mingw, :x64_mingw, :mswin, :jruby do
+# Platform-specific dependencies for Windows and JRuby
+platforms :windows, :jruby do
+  # Timezone support required by certain gems and environments
   gem "tzinfo", ">= 1", "< 3"
+  # Timezone data for Windows platforms
   gem "tzinfo-data"
 end
 
-# Performance-booster for watching directories on Windows
-gem "wdm", "~> 0.1", :platforms => [:mingw, :x64_mingw, :mswin]
+# File system watcher for Windows platforms
+gem 'wdm', '~> 0.2.0' if Gem.win_platform?
 
-# Lock `http_parser.rb` gem to `v0.6.x` on JRuby builds since newer versions of the gem
-# do not have a Java counterpart.
-gem "http_parser.rb", "~> 0.6.0", :platforms => [:jruby]
+# HTTP parser for JRuby compatibility
+gem "http_parser.rb", "~> 0.6.0", platforms: [:jruby]
+
+# Standard library gems (explicitly listed for compatibility or bundling)
+gem "csv"           # CSV parsing and generation
+gem "logger"        # Logging utilities
+gem "base64"        # Base64 encoding and decoding
+gem "webrick"       # Required for Jekyll 4.x on Ruby 3.x
+gem "net-http"      # Required for Faraday v2.0+ default adapter
