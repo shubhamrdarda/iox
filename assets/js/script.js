@@ -9,11 +9,15 @@
  *
  * ============================================================================= **/
 
+(function() {
+    "use strict";
+
 const canvas = document.getElementById('flowCanvas');
 const ctx = canvas.getContext('2d');
 const scoreValEl = document.getElementById('score-val');
 const chancesValEl = document.getElementById('chances-val');
-const uiEl = document.getElementById('ui');
+const uiEl = document.getElementById('hud');
+const uiTextEl = document.getElementById('ui-text');
 
 /** Global State Variables */
 let width, height;
@@ -25,8 +29,11 @@ let isTransitioning = false;
 let consecutiveHits = 0;
 let time = 0;
 let score = 0;
-let chances = 5;
+let totalMisses = 0;
+let gameStartTime = Date.now();
+let lastElapsedTotal = 0; // Integrity check
 let isGameOver = false;
+let ballColor = '#ffffff';
 
 /** Ball Configuration: Visual radius and physics state */
 const ball = {
@@ -128,9 +135,10 @@ function resize() {
     height = canvas.height = window.innerHeight;
 
     // Dynamically scale paddle width to maintain a consistent challenge
-    paddle.width = width * 0.2;
-    if (paddle.width < 90) paddle.width = 90;   // Minimum size for mobile touch accessibility
-    if (paddle.width > 200) paddle.width = 200; // Maximum size to keep desktop play challenging
+    paddle.width = width < 600 ? width * 0.35 : width * 0.2;
+    const minPaddleWidth = width < 600 ? 130 : 90;
+    if (paddle.width < minPaddleWidth) paddle.width = minPaddleWidth;
+    if (paddle.width > 220) paddle.width = 220; // Maximum size to keep desktop play challenging
 
     paddle.y = height - 50;
     // Center the paddle horizontally on refresh or resize
@@ -143,7 +151,8 @@ function resize() {
 /** Resets the ball to the "sticky" launch position on the paddle */
 function resetBall() {
     ball.active = false;
-    ball.x = width / 2;
+    paddle.x = (width - paddle.width) / 2; // Center the paddle horizontally
+    ball.x = width / 2;                   // Center the ball on the screen
     ball.y = paddle.y - ball.radius;
     ball.vx = 0;
     ball.vy = 0;
@@ -212,10 +221,30 @@ function generateGameLevel() {
     isTransitioning = false;
 }
 
+/** Fetches theme-aware colors from CSS variables */
+function updateThemeColors() {
+    ballColor = getComputedStyle(document.documentElement).getPropertyValue('--ball-color').trim() || '#ffffff';
+}
+
 /** Updates the UI Stat cards for Score and Chances */
 function updateStatsDisplay() {
-    scoreValEl.textContent = score;
-    chancesValEl.textContent = chances;
+    // Display the cumulative dynamic score
+    scoreValEl.textContent = Math.floor(score);
+
+    // Timer Logic: Only update if the game is still running
+    if (!isGameOver) {
+        const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+
+        // Anti-Cheat: Detect if the time has been rolled back or jumped unnaturally
+        if (elapsed < lastElapsedTotal) {
+            location.reload(); // Force reset if tampering detected
+        }
+        lastElapsedTotal = elapsed;
+
+        const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const secs = (elapsed % 60).toString().padStart(2, '0');
+        chancesValEl.textContent = `${mins}:${secs}`;
+    }
 }
 
 /** State Transition: Progresses through the countdown sequence from 10 to 1, then Trophy */
@@ -224,13 +253,13 @@ function nextNumber() {
     setTimeout(() => {
         if (currentNumber === 1) {
             currentNumber = "🏆";
-            uiEl.textContent = "Shine the Trophy!";
+            uiTextEl.textContent = "Shine the Trophy!";
             resetBall();
             generateGameLevel();
         } else if (currentNumber === "🏆") {
             // Final Victory State: Center message and hide game objects
             isGameOver = true;
-            uiEl.textContent = "Welcome to I/O 2026!";
+            uiTextEl.textContent = "Welcome to I/O!";
             uiEl.classList.add('final-screen');
             blocks = [];
             remainingBlocksCount = 0;
@@ -271,8 +300,25 @@ window.addEventListener('touchmove', e => {
 window.addEventListener('mousedown', handleAction);
 window.addEventListener('touchstart', handleAction);
 
+// Anti-fraud measures: Prevent right-click, selection events, and dragging
+window.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('selectstart', e => e.preventDefault());
+window.addEventListener('dragstart', e => e.preventDefault());
+
+// Disable common DevTools shortcuts (F12, Ctrl+Shift+I, etc.)
+window.addEventListener('keydown', e => {
+    if (e.keyCode === 123 ||
+        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
+        (e.ctrlKey && e.keyCode === 85)) {
+        e.preventDefault();
+    }
+});
+
 /** Initialization Routine */
 function init() {
+    updateThemeColors();
+    // Listen for system theme changes in real-time
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', updateThemeColors);
     resize();
     animate();
 }
@@ -372,10 +418,11 @@ function animate() {
                     ball.y + ball.radius + proximityBuffer > b.y && ball.y - ball.radius - proximityBuffer < b.y + b.h) {
 
                     // Penetrating Logic: Ball destroys blocks but keeps its trajectory
-                    // Dynamic blast radius to ensure the level finishes fast
-                    let blastRadius = 100;
-                    if (remainingBlocksCount < blocks.length * 0.3) blastRadius = 220;
-                    if (remainingBlocksCount <= 10) blastRadius = 1000; // Screen-clear finisher
+                    // Scaled blast radius based on screen width to ensure consistent gameplay across devices
+                    const baseBlast = width * 0.12;
+                    let blastRadius = baseBlast;
+                    if (remainingBlocksCount < blocks.length * 0.3) blastRadius = baseBlast * 2.2;
+                    if (remainingBlocksCount <= 10) blastRadius = width * 2; // Screen-clear finisher
 
                     const hitX = b.x + b.w / 2;
                     const hitY = b.y + b.h / 2;
@@ -390,7 +437,10 @@ function animate() {
                             if (distSq < blastRadius * blastRadius) {
                                 other.destroyed = true;
                                 remainingBlocksCount--;
-                                score++;
+
+                                // Performance Scoring: 1 mark per block + small streak bonus
+                                score += 1 + Math.floor(consecutiveHits / 10);
+
                                 // Create visual shards for each collateral block
                                 for (let k = 0; k < 2; k++) shards.push(new Shard(other.x, other.y, other.color));
                             }
@@ -405,26 +455,17 @@ function animate() {
 
             // Ball lost
             if (ball.y > height) {
-                chances--;
-                consecutiveHits = 0; // Reset history/streak on miss
-
-                // Failure condition: Reset countdown back to 10
-                if (chances <= 0) {
-                    currentNumber = 10;
-                    uiEl.textContent = "Ignite the Countdown";
-                    score = 0;
-                    chances = 5;
-                    generateGameLevel();
-                }
-
-                updateStatsDisplay();
+                totalMisses++;
+                // Scaling Penalty: The penalty increases by 20 for every miss (20, 40, 60...)
+                const currentPenalty = 20 * totalMisses;
+                score = Math.max(0, score - currentPenalty);
+                consecutiveHits = 0; // Streak reset is the primary penalty for missing
                 resetBall();
             }
         }
 
         // Draw Ball
-        // Solid white for a sharp, clean look
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = ballColor;
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -435,9 +476,14 @@ function animate() {
         nextNumber();
     }
 
+    // Refresh HUD metrics every frame to keep the timer ticking smoothly
+    updateStatsDisplay();
+
     time += 0.02; // Drive the iridescent shimmer
     requestAnimationFrame(animate);
 }
 
 window.addEventListener('resize', resize);
 init();
+
+})();

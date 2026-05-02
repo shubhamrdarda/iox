@@ -48,20 +48,24 @@
     <!-- Main rendering target for the high-performance particle engine -->
     <canvas id="flowCanvas"></canvas>
 
-    <!-- Interactive Title Overlay -->
-    <div id="ui">Ignite the Countdown</div>
-
-    <!-- Real-time HUD (Heads-Up Display) for game metrics -->
-    <div id="stats">
+    <!-- Unified HUD: All metrics and status in one row -->
+    <div id="hud">
+        <div class="stat-card" id="status-card">
+            <span class="label">Status</span>
+            <span id="ui-text" class="value">Ignite the Countdown</span>
+        </div>
         <div class="stat-card">
             <span class="label">Score</span>
             <span id="score-val" class="value">0</span>
         </div>
         <div class="stat-card">
-            <span class="label">Chances</span>
-            <span id="chances-val" class="value">5</span>
+            <span class="label">Time</span>
+            <span id="chances-val" class="value">00:00</span>
         </div>
     </div>
+
+    <!-- Background Hero Branding -->
+    <div id="hero-brand">Google I/O 2026</div>
 
     <!-- Minimalist Brand Attribution -->
     <div id="footer-hint">

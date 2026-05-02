@@ -6,7 +6,7 @@ gem "jekyll", "~> 4.4.1"
 
 # GitHub Pages integration (includes Jekyll and supported plugins)
 # Uncomment if deploying via GitHub Pages
-gem "github-pages", group: :jekyll_plugins
+# gem "github-pages", group: :jekyll_plugins
 
 # Jekyll plugin group
 group :jekyll_plugins do

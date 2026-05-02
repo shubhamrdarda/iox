@@ -9,97 +9,167 @@
  *
  * ============================================================================= **/
 
+/* Global Reset for predictable layout math */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Theme Variables */
+:root {
+    /* Dark Theme (Default) */
+    --bg-color-start: #0a0a1a;
+    --bg-color-end: #050505;
+    --ui-glow: rgba(66, 133, 244, 0.3);
+    --stat-bg: rgba(255, 255, 255, 0.05);
+    --stat-border: rgba(255, 255, 255, 0.1);
+    --label-color: rgba(255, 255, 255, 0.5);
+    --footer-color: rgba(255, 255, 255, 0.25);
+    --ball-color: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-color-start: #f8f9fa;
+        --bg-color-end: #e8eaed;
+        --ui-glow: rgba(66, 133, 244, 0.15);
+        --stat-bg: rgba(0, 0, 0, 0.05);
+        --stat-border: rgba(0, 0, 0, 0.1);
+        --label-color: rgba(0, 0, 0, 0.6);
+        --footer-color: rgba(0, 0, 0, 0.4);
+        --ball-color: #34A853; /* Green for light theme */
+    }
+}
+
 /* Base Document Configuration */
 body {
     margin: 0;
     overflow: hidden;
-    /* Deep midnight blue for a more premium AI feel */
-    background: radial-gradient(circle at center, #0a0a1a 0%, #050505 100%);
+    /* Premium shifting mesh background */
+    background: radial-gradient(circle at center, var(--bg-color-start) 0%, var(--bg-color-end) 100%);
     font-family: 'Google Sans', sans-serif;
+    /* Prevent text selection to deter fraud and improve game feel */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 #flowCanvas {
     display: block;
 }
 
-/* Dynamic Heading with Gemini Gradient */
-#ui {
+/* Unified HUD Row */
+#hud {
     position: absolute;
-    top: 5vh;
+    top: 2vh;
     left: 50%;
     transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 12px;
+    width: 95vw;
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+    z-index: 10;
+}
+
+#ui-text {
     background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570, #13B5C7);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.05em;
     text-transform: none;
-    font-size: clamp(18px, 4vw, 32px);
-    font-weight: 700;
-    pointer-events: none;
-    user-select: none;
-    filter: drop-shadow(0 0 10px rgba(66, 133, 244, 0.3));
+    font-weight: 900;
+    width: 100%;
+    text-align: center;
+    filter: drop-shadow(0 0 10px var(--ui-glow));
+    overflow: hidden;
+    text-overflow: ellipsis;
     animation: text-glow 3s infinite alternate ease-in-out;
 }
 
-/* Centered Layout for Final Victory Screen */
-#ui.final-screen {
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    font-size: clamp(32px, 8vw, 64px);
+/* Responsive Hero Brand Background */
+#hero-brand {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 100%;
     text-align: center;
-}
-
-/* Dashboard/HUD Layout */
-#stats {
-    position: absolute;
-    top: 2vh;
-    right: 20px;
-    display: flex;
-    gap: 12px;
+    font-size: clamp(40px, 15vw, 180px);
+    font-weight: 900;
+    background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570, #FBBC05);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0.1;
+    display: none;
     pointer-events: none;
-    user-select: none;
+    z-index: 1;
+    text-transform: uppercase;
 }
 
-/* Glassmorphism Effect for Stat Cards */
+/* Centered Layout for Final Victory Screen */
+#hud.final-screen {
+    top: 2vh !important;
+    transform: translateX(-50%) !important;
+}
+
+#hud.final-screen + #hero-brand {
+    display: block;
+}
+
+#hud.final-screen #ui-text {
+    font-size: clamp(14px, 4vw, 24px);
+}
 .stat-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--stat-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 8px 16px;
-    min-width: 80px;
+    border: 1px solid var(--stat-border);
+    border-radius: 10px;
+    padding: 8px 4px;
+    flex: 1;
+    min-width: 0;
+    height: 55px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.2);
 }
 
 .stat-card .label {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--label-color);
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    margin-bottom: 2px;
+    margin-bottom: 0px;
 }
 
 .stat-card .value {
-    font-size: 24px;
+    font-size: clamp(12px, 3.5vw, 24px);
     font-weight: 900;
     font-variant-numeric: tabular-nums;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #score-val {
     color: #34A853;
-    text-shadow: 0 0 10px rgba(52, 168, 83, 0.5);
+    text-shadow: 0 0 4px rgba(52, 168, 83, 0.3);
 }
 
 #chances-val {
-    color: #EA4335;
-    text-shadow: 0 0 10px rgba(234, 67, 53, 0.5);
+    color: #4285F4; /* Blue for light theme */
+    text-shadow: 0 0 4px rgba(66, 133, 244, 0.3);
 }
 
 /* Animations & Transitions */
@@ -109,29 +179,30 @@ body {
 }
 
 /* Responsive Adjustments for Mobile and Portrait Viewports */
-@media (max-width: 600px) {
-    #ui {
-        font-size: 20px;
-        letter-spacing: 3px;
-        top: 100px;
-        width: 90%;
-        text-align: center;
+@media (max-width: 1024px) {
+    #hud {
+        top: 20px;
+        width: 95vw;
+        justify-content: center;
+        gap: 12px; /* Uniform margin between rows and columns */
+        flex-wrap: wrap; /* Allow wrapping to two rows */
     }
 
-    #stats {
-        top: 20px;
-        right: auto;
-        left: 50%;
-        transform: translateX(-50%);
+    #status-card {
+        flex: 1 0 100%; /* Ensure row 1 fills the container width exactly */
     }
 
     .stat-card {
-        padding: 6px 12px;
-        min-width: 60px;
+        height: 48px;
+        padding: 4px;
+    }
+
+    .stat-card .label {
+        font-size: 7px;
     }
 
     .stat-card .value {
-        font-size: 18px;
+        font-size: clamp(10px, 3vw, 18px);
     }
 }
 
@@ -152,7 +223,7 @@ body {
     user-select: none;
     width: 100%;
     z-index: 5;
-    color: rgba(255, 255, 255, 0.25);
+    color: var(--footer-color);
     font-size: 10px;
     font-weight: 400;
     letter-spacing: 0.3em;
