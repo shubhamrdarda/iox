@@ -1,0 +1,72 @@
+---
+---
+<!-- =============================================================================
+#
+#  Project    : Google IO Experience
+#  File       : Entry Point (index.html)
+#  Created    : May 1, 2026
+#  Maintainer : Shubham Darda
+#  Purpose    : Entry point and structural foundation for the I/O 2026 interactive
+#               countdown experience, defining the rendering target and HUD.
+#
+# ============================================================================= -->
+
+<!DOCTYPE html>
+<html lang="en">
+<!-- Vibe & Shine: Google I/O 2026 Countdown Interactive Experience -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site.title }}</title>
+
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="{{ site.title }}">
+    <meta name="description" content="{{ site.description }}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ site.url }}">
+    <meta property="og:title" content="{{ site.title }}">
+    <meta property="og:description" content="{{ site.description }}">
+    <meta property="og:image" content="{{ site.logo }}">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ site.url }}">
+    <meta property="twitter:title" content="{{ site.title }}">
+    <meta property="twitter:description" content="{{ site.description }}">
+    <meta property="twitter:image" content="{{ site.logo }}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ site.logo }}">
+    <link rel="shortcut icon" type="image/png" href="{{ site.logo }}">
+    <link rel="apple-touch-icon" href="{{ site.logo }}">
+
+    <link rel="stylesheet" href="{{ site.css }}">
+</head>
+<body>
+    <!-- Main rendering target for the high-performance particle engine -->
+    <canvas id="flowCanvas"></canvas>
+
+    <!-- Interactive Title Overlay -->
+    <div id="ui">Ignite the Countdown</div>
+
+    <!-- Real-time HUD (Heads-Up Display) for game metrics -->
+    <div id="stats">
+        <div class="stat-card">
+            <span class="label">Score</span>
+            <span id="score-val" class="value">0</span>
+        </div>
+        <div class="stat-card">
+            <span class="label">Chances</span>
+            <span id="chances-val" class="value">5</span>
+        </div>
+    </div>
+
+    <!-- Minimalist Brand Attribution -->
+    <div id="footer-hint">
+        I/O 2026 <span class="dot">•</span> Experience Powered By Gemini
+    </div>
+    <script src="{{ site.js }}"></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+/** =============================================================================
+ *
+ *  Project    : Google IO Experience
+ *  File       : Visual Identity (style.css)
+ *  Created    : May 1, 2026
+ *  Maintainer : Shubham Darda
+ *  Purpose    : Manages visual identity, responsive layout, and Gemini-inspired
+ *               aesthetics, implementing modern Glassmorphism and animations.
+ *
+ * ============================================================================= **/
+
+/* Base Document Configuration */
+body {
+    margin: 0;
+    overflow: hidden;
+    /* Deep midnight blue for a more premium AI feel */
+    background: radial-gradient(circle at center, #0a0a1a 0%, #050505 100%);
+    font-family: 'Google Sans', sans-serif;
+}
+
+#flowCanvas {
+    display: block;
+}
+
+/* Dynamic Heading with Gemini Gradient */
+#ui {
+    position: absolute;
+    top: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570, #13B5C7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.2em;
+    text-transform: none;
+    font-size: clamp(18px, 4vw, 32px);
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+    filter: drop-shadow(0 0 10px rgba(66, 133, 244, 0.3));
+    animation: text-glow 3s infinite alternate ease-in-out;
+}
+
+/* Centered Layout for Final Victory Screen */
+#ui.final-screen {
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: clamp(32px, 8vw, 64px);
+    width: 100%;
+    text-align: center;
+}
+
+/* Dashboard/HUD Layout */
+#stats {
+    position: absolute;
+    top: 2vh;
+    right: 20px;
+    display: flex;
+    gap: 12px;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Glassmorphism Effect for Stat Cards */
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 8px 16px;
+    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.stat-card .label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 2px;
+}
+
+.stat-card .value {
+    font-size: 24px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+#score-val {
+    color: #34A853;
+    text-shadow: 0 0 10px rgba(52, 168, 83, 0.5);
+}
+
+#chances-val {
+    color: #EA4335;
+    text-shadow: 0 0 10px rgba(234, 67, 53, 0.5);
+}
+
+/* Animations & Transitions */
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+}
+
+/* Responsive Adjustments for Mobile and Portrait Viewports */
+@media (max-width: 600px) {
+    #ui {
+        font-size: 20px;
+        letter-spacing: 3px;
+        top: 100px;
+        width: 90%;
+        text-align: center;
+    }
+
+    #stats {
+        top: 20px;
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .stat-card {
+        padding: 6px 12px;
+        min-width: 60px;
+    }
+
+    .stat-card .value {
+        font-size: 18px;
+    }
+}
+
+/* Pulsing glow animation for the main title */
+@keyframes text-glow {
+    from { filter: drop-shadow(0 0 5px rgba(66, 133, 244, 0.4)); }
+    to { filter: drop-shadow(0 0 20px rgba(234, 67, 53, 0.6)); }
+}
+
+/* Minimalist Footer Branding */
+#footer-hint {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+    width: 100%;
+    z-index: 5;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: none;
+}
+
+#footer-hint .dot {
+    margin: 0 10px;
+    opacity: 0.5;
+}

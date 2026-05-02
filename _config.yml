@@ -1,0 +1,25 @@
+# =============================================================================
+#
+#  Project    : Google IO Experience
+#  File       : Site Configuration (_config.yml)
+#  Created    : May 1, 2026
+#  Maintainer : Shubham Darda
+#  Purpose    : This file defines the core configuration for the Google IO Experience site,
+#               including metadata, asset paths, build settings, and plugin management.
+#
+# =============================================================================
+
+# Site Metadata
+title: "Vibe & Shine - I/O 2026"
+description: "Imagination meets Gemini. The frontier of vibe-coding is explored with a collection of interactive, high-energy digits for Google I/O 2026."
+url: "https://shubhamrdarda.github.io/iox"
+logo: "assets/images/logo.png"
+css: "assets/css/style.css"
+js: "assets/js/script.js"
+
+# Build Settings
+encoding: "utf-8"
+exclude:
+  - .vscode/
+  - .vendor/
+  - README.md
