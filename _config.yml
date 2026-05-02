@@ -12,7 +12,8 @@
 # Site Metadata
 title: "Vibe & Shine - I/O 2026"
 description: "Imagination meets Gemini. The frontier of vibe-coding is explored with a collection of interactive, high-energy digits for Google I/O 2026."
-url: "https://shubhamrdarda.github.io/iox"
+url: "https://shubhamrdarda.github.io"
+baseurl: "/iox"
 logo: "assets/images/logo.png"
 css: "assets/css/style.css"
 js: "assets/js/script.js"
