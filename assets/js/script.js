@@ -132,6 +132,9 @@ class Shard {
  * Handles resizing of the drawing buffer and recalculates game object positions.
  */
 function resize() {
+    const oldW = width;
+    const oldH = height;
+
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
 
@@ -142,11 +145,31 @@ function resize() {
     if (paddle.width > 220) paddle.width = 220; // Maximum size to keep desktop play challenging
 
     paddle.y = height - 50;
-    // Center the paddle horizontally on refresh or resize
-    paddle.x = (width - paddle.width) / 2;
 
-    resetBall();
-    generateGameLevel();
+    // UX Fix: Prevent resetting the number progress when resizing the window mid-game.
+    // If the game has started and we aren't in a level transition, we shift blocks rather than regenerating.
+    if (gameStartTime && blocks.length > 0 && !isTransitioning) {
+        const shiftX = (width - oldW) / 2;
+        const shiftY = (height - oldH) / 2;
+
+        // Shift all blocks to stay centered relative to the new window size without resetting their state
+        blocks.forEach(b => {
+            b.x += shiftX;
+            b.y += shiftY;
+        });
+
+        // Adjust paddle and ball (if docked) to match the new center shift
+        paddle.x = Math.max(0, Math.min(width - paddle.width, paddle.x + shiftX));
+        if (!ball.active) {
+            ball.x = paddle.x + paddle.width / 2;
+            ball.y = paddle.y - ball.radius;
+        }
+    } else {
+        // Initial load or transitioning between numbers
+        paddle.x = (width - paddle.width) / 2;
+        resetBall();
+        generateGameLevel();
+    }
 }
 
 /** Resets the ball to the "sticky" launch position on the paddle */

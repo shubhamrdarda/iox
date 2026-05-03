@@ -95,12 +95,12 @@ body {
 /* Responsive Hero Brand Background */
 #hero-brand {
     position: absolute;
-    top: 55%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 100%;
     text-align: center;
-    font-size: clamp(40px, 15vw, 180px);
+    font-size: clamp(30px, 10vw, 120px);
     font-weight: 900;
     background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570, #FBBC05);
     -webkit-background-clip: text;
@@ -170,6 +170,45 @@ body {
 #chances-val {
     color: #4285F4; /* Blue for light theme */
     text-shadow: 0 0 4px rgba(66, 133, 244, 0.3);
+}
+
+/* Final Credits Layout: Centered below Hero Brand */
+#final-credits {
+    position: absolute;
+    top: 72%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 15px;
+    z-index: 10;
+    pointer-events: auto; /* Enable link clicks */
+}
+
+#hud.final-screen ~ #final-credits {
+    display: flex;
+}
+
+#final-credits .stat-card {
+    min-width: 200px;
+    height: 65px;
+    padding: 8px 20px;
+    flex: 0 1 auto;
+}
+
+#final-credits .stat-card .value {
+    font-size: 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stat-card a {
+    background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570, #13B5C7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+    font-weight: 900;
 }
 
 /* Animations & Transitions */
