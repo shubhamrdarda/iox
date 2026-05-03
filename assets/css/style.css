@@ -98,9 +98,9 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 100%;
+    width: 90vw;
     text-align: center;
-    font-size: clamp(30px, 10vw, 120px);
+    font-size: clamp(24px, 8.5vw, 120px);
     font-weight: 900;
     background: linear-gradient(90deg, #4285F4, #9B72CB, #D96570, #FBBC05);
     -webkit-background-clip: text;
@@ -121,6 +121,19 @@ body {
 
 #hud.final-screen + #hero-brand {
     display: block;
+    opacity: 0.8;
+    background-size: 200% auto;
+    animation: hero-shimmer 8s linear infinite, congrats-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes hero-shimmer {
+    from { background-position: 0% center; }
+    to { background-position: 200% center; }
+}
+
+@keyframes congrats-pulse {
+    from { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+    to { transform: translate(-50%, -50%) scale(1.03); filter: brightness(1.15) drop-shadow(0 0 20px var(--ui-glow)); }
 }
 
 #hud.final-screen #ui-text {
@@ -229,6 +242,18 @@ body {
 
     #status-card {
         flex: 1 0 100%; /* Ensure row 1 fills the container width exactly */
+    }
+
+    #final-credits {
+        width: 95vw;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    #final-credits .stat-card {
+        min-width: 0;
+        flex: 1;
     }
 
     .stat-card {

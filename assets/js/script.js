@@ -112,6 +112,7 @@ class Shard {
         this.vy = (Math.random() - 0.5) * 10;
         this.life = 1.0;
         this.color = color;
+        this.size = Math.random() * 3 + 1; // Varied sparkle size for a "glitter" effect
     }
     update() {
         this.x += this.vx; this.y += this.vy;
@@ -121,9 +122,25 @@ class Shard {
         ctx.globalAlpha = this.life * 0.8;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
+    }
+}
+
+/**
+ * Sparkle Bomb Effect: Creates a high-density explosion of particles
+ * at a specific coordinate using the Google brand palette.
+ */
+function createSparkleBomb(x, y, count = 150) {
+    for (let i = 0; i < count; i++) {
+        const color = palette[Math.floor(Math.random() * palette.length)];
+        const sparkle = new Shard(x, y, color);
+        const angle = Math.random() * Math.PI * 2;
+        const force = Math.random() * 12 + 4;
+        sparkle.vx = Math.cos(angle) * force;
+        sparkle.vy = Math.sin(angle) * force;
+        shards.push(sparkle);
     }
 }
 
@@ -286,6 +303,7 @@ function nextNumber() {
             isGameOver = true;
             uiTextEl.textContent = "Welcome to I/O!";
             uiEl.classList.add('final-screen');
+            createSparkleBomb(width / 2, height / 2, 300); // Initial center burst
             blocks = [];
             remainingBlocksCount = 0;
             // We don't call generateGameLevel(), so isTransitioning remains true,
@@ -512,6 +530,13 @@ function animate() {
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
         ctx.fill();
+    }
+
+    // Sparkle Bomb Loop: Occasionally triggers mini-explosions while on the final screen
+    if (isGameOver && Math.random() > 0.96) {
+        const rx = Math.random() * width;
+        const ry = Math.random() * height;
+        createSparkleBomb(rx, ry, 40);
     }
 
     // Win condition
