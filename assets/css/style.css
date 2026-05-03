@@ -16,6 +16,7 @@
 
 /* Theme Variables */
 :root {
+    color-scheme: dark light;
     /* Dark Theme (Default) */
     --bg-color-start: #0a0a1a;
     --bg-color-end: #050505;
@@ -84,6 +85,7 @@ body {
     letter-spacing: 0.05em;
     text-transform: none;
     font-weight: 900;
+    line-height: 1.2;
     width: 100%;
     text-align: center;
     filter: drop-shadow(0 0 10px var(--ui-glow));
@@ -148,7 +150,7 @@ body {
     padding: 8px 4px;
     flex: 1;
     min-width: 0;
-    height: 55px;
+    height: 60px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -168,6 +170,7 @@ body {
     font-size: clamp(12px, 3.5vw, 24px);
     font-weight: 900;
     font-variant-numeric: tabular-nums;
+    line-height: 1.2;
     width: 100%;
     text-align: center;
     white-space: nowrap;
@@ -183,6 +186,21 @@ body {
 #chances-val {
     color: #4285F4; /* Blue for light theme */
     text-shadow: 0 0 4px rgba(66, 133, 244, 0.3);
+}
+
+#sound-val {
+    color: #FBBC05;
+    text-shadow: 0 0 4px rgba(251, 188, 5, 0.3);
+}
+
+#sound-card {
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+#sound-card:active {
+    transform: scale(0.95);
 }
 
 /* Final Credits Layout: Centered below Hero Brand */
@@ -257,7 +275,7 @@ body {
     }
 
     .stat-card {
-        height: 48px;
+        height: 53px;
         padding: 4px;
     }
 
@@ -272,8 +290,8 @@ body {
 
 /* Pulsing glow animation for the main title */
 @keyframes text-glow {
-    from { filter: drop-shadow(0 0 5px rgba(66, 133, 244, 0.4)); }
-    to { filter: drop-shadow(0 0 20px rgba(234, 67, 53, 0.6)); }
+    from { text-shadow: 0 0 5px rgba(66, 133, 244, 0.4); }
+    to { text-shadow: 0 0 15px rgba(234, 67, 53, 0.6); }
 }
 
 /* Minimalist Footer Branding */

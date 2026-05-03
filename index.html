@@ -13,7 +13,11 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<!-- Vibe & Shine: Google I/O 2026 Countdown Interactive Experience -->
+<!--
+    Vibe & Shine: Google I/O 2026 Countdown Interactive Experience.
+    A high-performance particle-based breakout clone designed to showcase
+    procedural generation and smooth web animations.
+-->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,6 +46,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ site.baseurl }}/{{ site.logo }}">
     <link rel="shortcut icon" type="image/png" href="{{ site.baseurl }}/{{ site.logo }}">
     <link rel="apple-touch-icon" href="{{ site.baseurl }}/{{ site.logo }}">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-BP4RDLKBFQ"></script>
     <link rel="stylesheet" href="{{ site.baseurl }}/{{ site.css }}">
 </head>
@@ -61,7 +66,7 @@ if (window.location.hostname !== "localhost" && window.location.hostname !== "12
     <!-- Main rendering target for the high-performance particle engine -->
     <canvas id="flowCanvas"></canvas>
 
-    <!-- Unified HUD: All metrics and status in one row -->
+    <!-- HUD: Overlays real-time game metrics and status messages -->
     <div id="hud">
         <div class="stat-card" id="status-card">
             <span class="label">Status</span>
@@ -77,10 +82,10 @@ if (window.location.hostname !== "localhost" && window.location.hostname !== "12
         </div>
     </div>
 
-    <!-- Background Hero Branding -->
+    <!-- Background Layer: Thematic typography displayed behind the gameplay -->
     <div id="hero-brand">Google I/O 2026</div>
 
-    <!-- Final screen links: Positioned below the Hero Brand -->
+    <!-- End-Game UI: Post-victory credits and repository links -->
     <div id="final-credits">
         <div class="stat-card" id="credit-card">
             <span class="label">Developer</span>
@@ -92,7 +97,7 @@ if (window.location.hostname !== "localhost" && window.location.hostname !== "12
         </div>
     </div>
 
-    <!-- Minimalist Brand Attribution -->
+    <!-- Footer: Minimalist branding and attribution -->
     <div id="footer-hint">
         I/O 2026 <span class="dot">•</span> Experience Powered By Gemini
     </div>

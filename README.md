@@ -21,10 +21,11 @@ An interactive, high-performance particle-based countdown game built for the Goo
 ## 💻 Getting Started
 
 ### Prerequisites
+- **Python 3.x**: Required to run the automated setup and orchestration script.
+- **Ruby & RubyGems**: Required for the Jekyll static site engine.
 - A modern web browser (Chrome, Firefox, Safari, or Edge).
-- (Optional) Jekyll installed if you wish to build the site locally with `_config.yml` variables.
 
-### Installation
+### Installation & Quick Start
 1. Clone the repository:
    ```bash
    git clone https://github.com/shubhamrdarda/iox.git
@@ -33,10 +34,11 @@ An interactive, high-performance particle-based countdown game built for the Goo
    ```bash
    cd iox
    ```
-3. Open `index.html` in your browser, or serve it using a local server:
+3. Run the automated setup script to install dependencies and start the server:
    ```bash
-   jekyll serve
+   python setup.py
    ```
+   *This script handles Bundler installation, local gem configuration, and starts the Jekyll development server automatically.*
 
 ---
 Powered by Gemini • Google I/O 2026

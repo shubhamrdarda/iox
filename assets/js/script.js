@@ -24,21 +24,28 @@ let width, height;
 let blocks = [];
 let shards = [];
 let currentNumber = 10;
-let remainingBlocksCount = 0;
-let isTransitioning = false;
-let consecutiveHits = 0;
+let remainingBlocksCount = 0; // Tracks blocks left in current number
+let isTransitioning = false;  // Prevents input during level load
+let consecutiveHits = 0;      // Controls speed multiplier
 let time = 0;
 let score = 0;
+let lastFrameTime = 0;        // Used for Delta Time calculations
 let totalMisses = 0;
 let gameStartTime = null;
 let lastElapsedTotal = 0; // Integrity check
-let launchReady = false;   // Gate to prevent accidental launch on first touch
+let launchReady = false;   // Mobile UX gate to prevent accidental launches
 let isGameOver = false;
 let ballColor = '#ffffff';
+let isSoundEnabled = true;
+let audioCtx = null;
+
+// Reuse offscreen canvas for level generation
+const offscreen = document.createElement('canvas');
+const octx = offscreen.getContext('2d');
 
 /** Ball Configuration: Visual radius and physics state */
 const ball = {
-    x: 0, y: 0, vx: 0, vy: 0, radius: 12, active: false
+    x: 0, y: 0, vx: 0, vy: 0, radius: 12, active: false, missSoundPlayed: false
 };
 
 const paddle = {
@@ -53,6 +60,12 @@ const palette = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
  * Features modern glass-morphism and iridescent animation.
  */
 class Block {
+    /**
+     * @param {number} x - Horizontal position
+     * @param {number} y - Vertical position
+     * @param {number} size - Width/Height of the block
+     * @param {boolean} [isHard=false] - Whether the block is indestructible
+     */
     constructor(x, y, size, isHard = false) {
         this.x = x;
         this.y = y;
@@ -88,7 +101,8 @@ class Block {
         } else {
             // Gemini Iridescence: Blend with the next color in the palette
             const nextColor = palette[(this.colorIndex + 1) % palette.length];
-            const shift = Math.sin(time + (this.x + this.y) * 0.01) * 0.5 + 0.5;
+            // Clamp shift to be above the 0.2 stop to ensure non-decreasing order for Canvas API
+            const shift = 0.25 + (Math.sin(time + (this.x + this.y) * 0.01) * 0.5 + 0.5) * 0.7;
 
             grad.addColorStop(0, 'rgba(255, 255, 255, 0.4)'); // Simplified Sheen
             grad.addColorStop(0.2, this.color);
@@ -106,6 +120,11 @@ class Block {
  * Mimics glowing liquid energy when a block is "scratched".
  */
 class Shard {
+    /**
+     * @param {number} x - Origin X
+     * @param {number} y - Origin Y
+     * @param {string} color - CSS Color string
+     */
     constructor(x, y, color) {
         this.x = x; this.y = y;
         this.vx = (Math.random() - 0.5) * 10;
@@ -116,10 +135,11 @@ class Shard {
     }
     update() {
         this.x += this.vx; this.y += this.vy;
-        this.life -= 0.02;
+        this.life = Math.max(0, this.life - 0.02);
     }
     draw() {
-        ctx.globalAlpha = this.life * 0.8;
+        // Ensure alpha is never negative to prevent Canvas rendering state glitches
+        ctx.globalAlpha = Math.max(0, this.life * 0.8);
         ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -193,6 +213,7 @@ function resize() {
 function resetBall() {
     ball.active = false;
     launchReady = false;
+    ball.missSoundPlayed = false;
     paddle.x = (width - paddle.width) / 2; // Center the paddle horizontally
     ball.x = width / 2;                   // Center the ball on the screen
     ball.y = paddle.y - ball.radius;
@@ -209,8 +230,6 @@ function generateGameLevel() {
     // Prevent re-generating blocks if the game has already concluded (e.g., on mobile resize)
     if (isGameOver) return;
 
-    const offscreen = document.createElement('canvas');
-    const octx = offscreen.getContext('2d');
     offscreen.width = width;
     offscreen.height = height;
     octx.fillStyle = 'white';
@@ -292,6 +311,14 @@ function updateStatsDisplay() {
 /** State Transition: Progresses through the countdown sequence from 10 to 1, then Trophy */
 function nextNumber() {
     isTransitioning = true;
+
+    // Play celebratory sounds based on progress
+    if (currentNumber === "🏆") {
+        playWinSound();
+    } else {
+        playLevelCompleteSound();
+    }
+
     setTimeout(() => {
         if (currentNumber === 1) {
             currentNumber = "🏆";
@@ -304,6 +331,7 @@ function nextNumber() {
             uiTextEl.textContent = "Welcome to I/O!";
             uiEl.classList.add('final-screen');
             createSparkleBomb(width / 2, height / 2, 300); // Initial center burst
+            playVictoryMusic();
             blocks = [];
             remainingBlocksCount = 0;
             // We don't call generateGameLevel(), so isTransitioning remains true,
@@ -327,6 +355,14 @@ const handleMove = (clientX) => {
 };
 
 const handleAction = (isTouch = false) => {
+    // Unlock Web Audio API on first user interaction
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
     // Launches the ball if it is currently docked on the paddle
     if (!ball.active && !isTransitioning) {
         // UX Improvement: Only require a second tap on touch devices to allow positioning.
@@ -341,6 +377,7 @@ const handleAction = (isTouch = false) => {
 
         if (!gameStartTime) gameStartTime = Date.now();
         ball.active = true;
+        playLaunchSound();
         launchReady = false;
 
         if (currentNumber !== "🏆") {
@@ -377,11 +414,215 @@ window.addEventListener('keydown', e => {
 
 /** Initialization Routine */
 function init() {
+    // Add Sound Card dynamically to the HUD
+    const soundCard = document.createElement('div');
+    soundCard.className = 'stat-card';
+    soundCard.id = 'sound-card';
+    soundCard.innerHTML = '<div class="label">Sound</div><div class="value" id="sound-val">ON</div>';
+    uiEl.appendChild(soundCard);
+
+    const toggleSound = (e) => {
+        e.stopPropagation(); // Prevent ball launch when clicking/tapping toggle
+        isSoundEnabled = !isSoundEnabled;
+        document.getElementById('sound-val').textContent = isSoundEnabled ? "ON" : "OFF";
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    };
+    soundCard.addEventListener('mousedown', toggleSound);
+    soundCard.addEventListener('touchstart', toggleSound);
+
     updateThemeColors();
     // Listen for system theme changes in real-time
     window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', updateThemeColors);
     resize();
     animate();
+}
+
+/** Procedural Sound Engine: Generates a "scratch" effect without external files */
+function playScratchSound() {
+    if (!audioCtx || !isSoundEnabled) return;
+
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'triangle'; // Soft metallic tone
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.08);
+
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+}
+
+/** Procedural Sound Engine: Generates an upward "zip" for launching */
+function playLaunchSound() {
+    if (!audioCtx || !isSoundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+}
+
+/** Procedural Sound Engine: Success chime for clearing numbers */
+function playLevelCompleteSound() {
+    if (!audioCtx || !isSoundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    [660, 880].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.4);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + i * 0.1);
+        osc.stop(audioCtx.currentTime + i * 0.1 + 0.4);
+    });
+}
+
+/** Procedural Sound Engine: Generates a "win" fanfare */
+function playWinSound() {
+    if (!audioCtx || !isSoundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.15);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + i * 0.15);
+        osc.stop(audioCtx.currentTime + i * 0.15 + 0.5);
+    });
+}
+
+/** Procedural Sound Engine: Upbeat arpeggio for the victory screen */
+function playVictoryMusic() {
+    if (!audioCtx || !isSoundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const now = audioCtx.currentTime;
+    // High-energy arpeggio: C5, E5, G5, C6, E6, G6, C7 (Resolution)
+    const melody = [
+        { f: 523.25, t: 0.0 }, { f: 659.25, t: 0.1 }, { f: 783.99, t: 0.2 },
+        { f: 1046.50, t: 0.3 }, { f: 1318.51, t: 0.4 }, { f: 1567.98, t: 0.5 },
+        { f: 2093.00, t: 0.6 }
+    ];
+
+    melody.forEach((note) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle'; // Softer, "shimmering" tone
+        osc.frequency.setValueAtTime(note.f, now + note.t);
+        gain.gain.setValueAtTime(0, now + note.t);
+        gain.gain.linearRampToValueAtTime(0.1, now + note.t + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + note.t + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + note.t);
+        osc.stop(now + note.t + 0.5);
+    });
+}
+
+/** Procedural Sound Engine: Generates a "miss" effect when the ball is lost */
+function playMissSound() {
+    if (!audioCtx || !isSoundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    // Dissonant "fail" tone using sawtooth waves for better audibility
+    osc1.type = 'sawtooth';
+    osc2.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc2.frequency.setValueAtTime(155, audioCtx.currentTime);
+
+    osc1.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.6);
+    osc2.frequency.exponentialRampToValueAtTime(42, audioCtx.currentTime + 0.6);
+
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.start();
+    osc2.start();
+    osc1.stop(audioCtx.currentTime + 0.6);
+    osc2.stop(audioCtx.currentTime + 0.6);
+}
+
+/** Procedural Sound Engine: Short "clink" for successful paddle bounces */
+function playPaddleSound() {
+    if (!audioCtx || !isSoundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+}
+
+/** Procedural Sound Engine: Subtle "thud" for wall/ceiling bounces */
+function playWallSound() {
+    if (!audioCtx || !isSoundEnabled) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
+
+    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
 }
 
 /** Renders the I/O Prismatic Paddle */
@@ -424,7 +665,12 @@ function drawAmbientGlow() {
  * 2. Updates physics (Ball & Shards)
  * 3. Handles Collision Detection (Paddle & Blocks)
  */
-function animate() {
+function animate(currentTime) {
+    // Framerate Independence: dt ensures physics feel the same at 60Hz vs 144Hz.
+    // Calculated as (Actual Elapsed) / (Ideal 16.6ms per frame).
+    const dt = lastFrameTime ? (currentTime - lastFrameTime) / 16.667 : 1;
+    lastFrameTime = currentTime;
+
     // Completely clear the canvas for a crisp background without motion trails
     ctx.clearRect(0, 0, width, height);
 
@@ -443,18 +689,24 @@ function animate() {
 
         // Ball
         if (ball.active) {
-            ball.x += ball.vx;
-            ball.y += ball.vy;
+            ball.x += ball.vx * dt;
+            ball.y += ball.vy * dt;
 
             // Wall collisions
-            if (ball.x <= 0 || ball.x >= width) ball.vx *= -1; // Left/Right walls
+            if (ball.x <= ball.radius || ball.x >= width - ball.radius) {
+                ball.vx *= -1;
+                ball.x = ball.x <= ball.radius ? ball.radius : width - ball.radius;
+                playWallSound();
+            }
             if (ball.y <= 0) { // Top wall
                 ball.vy = Math.abs(ball.vy); // Ensure it bounces down
+                playWallSound();
             }
 
             // Paddle collision
             if (ball.y + ball.radius >= paddle.y &&
                 ball.x > paddle.x && ball.x < paddle.x + paddle.width && ball.vy > 0) {
+                playPaddleSound();
                 consecutiveHits++;
                 // Increase speed factor by 5% per successful catch
                 const speedFactor = 1 + (consecutiveHits * 0.05);
@@ -472,11 +724,14 @@ function animate() {
             // Iterate over blocks in reverse to safely remove/modify elements
             for (let i = blocks.length - 1; i >= 0; i--) {
                 let b = blocks[i];
-                // Check for collision with a proximity buffer to "scratch" nearby blocks
+                // Broad-phase AABB collision with a small proximity buffer.
                 const proximityBuffer = 6; // Reduced for more precise hit detection
                 if (!b.destroyed &&
                     ball.x + ball.radius + proximityBuffer > b.x && ball.x - ball.radius - proximityBuffer < b.x + b.w &&
                     ball.y + ball.radius + proximityBuffer > b.y && ball.y - ball.radius - proximityBuffer < b.y + b.h) {
+
+                    // Play the scratch sound effect on impact
+                    playScratchSound();
 
                     // Penetrating Logic: Ball destroys blocks but keeps its trajectory
                     // Scaled blast radius based on screen width to ensure consistent gameplay across devices
@@ -487,26 +742,27 @@ function animate() {
 
                     const hitX = b.x + b.w / 2;
                     const hitY = b.y + b.h / 2;
+                    const blastRadiusSq = blastRadius * blastRadius;
 
-                    // Scratch multiple blocks in the vicinity
-                    blocks.forEach(other => {
-                        if (!other.destroyed) {
-                            const dx = (other.x + other.w / 2) - hitX;
-                            const dy = (other.y + other.h / 2) - hitY;
-                            const distSq = dx * dx + dy * dy;
+                    // Spatial optimization: only perform distance calculations for blocks within the
+                    // bounding box of the blast radius to avoid O(N²) performance penalties.
+                    for (let j = 0; j < blocks.length; j++) {
+                        const other = blocks[j];
+                        if (other.destroyed) continue;
 
-                            if (distSq < blastRadius * blastRadius) {
+                        const dx = (other.x + other.w / 2) - hitX;
+                        const dy = (other.y + other.h / 2) - hitY;
+
+                        // Quick bounding box check before expensive square root/distance logic
+                        if (Math.abs(dx) < blastRadius && Math.abs(dy) < blastRadius) {
+                            if (dx * dx + dy * dy < blastRadiusSq) {
                                 other.destroyed = true;
                                 remainingBlocksCount--;
-
-                                // Performance Scoring: 1 mark per block + small streak bonus
                                 score += 1 + Math.floor(consecutiveHits / 10);
-
-                                // Create visual shards for each collateral block
                                 for (let k = 0; k < 2; k++) shards.push(new Shard(other.x, other.y, other.color));
                             }
                         }
-                    });
+                    }
                     updateStatsDisplay();
 
                     // Notice: No ball.vy flip here! The ball continues its path.
@@ -515,7 +771,13 @@ function animate() {
             }
 
             // Ball lost
-            if (ball.y > height) {
+            // Trigger sound immediately when it passes the paddle threshold
+            if (ball.y - ball.radius > paddle.y + paddle.height && !ball.missSoundPlayed) {
+                playMissSound();
+                ball.missSoundPlayed = true;
+            }
+
+            if (ball.y > height + ball.radius) {
                 totalMisses++;
                 // Scaling Penalty: The penalty increases by 20 for every miss (20, 40, 60...)
                 const currentPenalty = 20 * totalMisses;
