@@ -30,8 +30,9 @@ let consecutiveHits = 0;
 let time = 0;
 let score = 0;
 let totalMisses = 0;
-let gameStartTime = Date.now();
+let gameStartTime = null;
 let lastElapsedTotal = 0; // Integrity check
+let launchReady = false;   // Gate to prevent accidental launch on first touch
 let isGameOver = false;
 let ballColor = '#ffffff';
 
@@ -151,6 +152,7 @@ function resize() {
 /** Resets the ball to the "sticky" launch position on the paddle */
 function resetBall() {
     ball.active = false;
+    launchReady = false;
     paddle.x = (width - paddle.width) / 2; // Center the paddle horizontally
     ball.x = width / 2;                   // Center the ball on the screen
     ball.y = paddle.y - ball.radius;
@@ -233,7 +235,7 @@ function updateStatsDisplay() {
 
     // Timer Logic: Only update if the game is still running
     if (!isGameOver) {
-        const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+        const elapsed = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 0;
 
         // Anti-Cheat: Detect if the time has been rolled back or jumped unnaturally
         if (elapsed < lastElapsedTotal) {
@@ -267,6 +269,7 @@ function nextNumber() {
             // which disables further ball launches.
         } else {
             currentNumber--;
+            uiTextEl.textContent = "Ignite Number " + currentNumber;
             resetBall();
             generateGameLevel();
         }
@@ -282,10 +285,27 @@ const handleMove = (clientX) => {
     }
 };
 
-const handleAction = () => {
+const handleAction = (isTouch = false) => {
     // Launches the ball if it is currently docked on the paddle
     if (!ball.active && !isTransitioning) {
+        // UX Improvement: Only require a second tap on touch devices to allow positioning.
+        // Mouse users can position without clicking, so they don't need this gate.
+        if (isTouch && !launchReady) {
+            launchReady = true;
+            if (currentNumber !== "🏆") {
+                uiTextEl.textContent = "Paddle Set. Tap to Ignite!";
+            }
+            return;
+        }
+
+        if (!gameStartTime) gameStartTime = Date.now();
         ball.active = true;
+        launchReady = false;
+
+        if (currentNumber !== "🏆") {
+            uiTextEl.textContent = "Vibe & Shine: " + currentNumber;
+        }
+
         ball.vx = (Math.random() - 0.5) * 8;
         ball.vy = -12 * (1 + consecutiveHits * 0.05); // Increased dynamic launch speed
     }
@@ -297,8 +317,8 @@ window.addEventListener('touchmove', e => {
     if (e.cancelable) e.preventDefault();
 }, { passive: false });
 
-window.addEventListener('mousedown', handleAction);
-window.addEventListener('touchstart', handleAction);
+window.addEventListener('mousedown', () => handleAction(false));
+window.addEventListener('touchstart', () => handleAction(true));
 
 // Anti-fraud measures: Prevent right-click, selection events, and dragging
 window.addEventListener('contextmenu', e => e.preventDefault());
@@ -412,17 +432,17 @@ function animate() {
             for (let i = blocks.length - 1; i >= 0; i--) {
                 let b = blocks[i];
                 // Check for collision with a proximity buffer to "scratch" nearby blocks
-                const proximityBuffer = 10;
+                const proximityBuffer = 6; // Reduced for more precise hit detection
                 if (!b.destroyed &&
                     ball.x + ball.radius + proximityBuffer > b.x && ball.x - ball.radius - proximityBuffer < b.x + b.w &&
                     ball.y + ball.radius + proximityBuffer > b.y && ball.y - ball.radius - proximityBuffer < b.y + b.h) {
 
                     // Penetrating Logic: Ball destroys blocks but keeps its trajectory
                     // Scaled blast radius based on screen width to ensure consistent gameplay across devices
-                    const baseBlast = width * 0.12;
+                    const baseBlast = width * 0.07; // Significantly reduced to prolong gameplay
                     let blastRadius = baseBlast;
-                    if (remainingBlocksCount < blocks.length * 0.3) blastRadius = baseBlast * 2.2;
-                    if (remainingBlocksCount <= 10) blastRadius = width * 2; // Screen-clear finisher
+                    if (remainingBlocksCount < blocks.length * 0.3) blastRadius = baseBlast * 1.6; // Reduced late-game boost
+                    if (remainingBlocksCount <= 10) blastRadius = width * 0.4; // Controlled finisher
 
                     const hitX = b.x + b.w / 2;
                     const hitY = b.y + b.h / 2;

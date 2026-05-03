@@ -41,9 +41,21 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ site.baseurl }}/{{ site.logo }}">
     <link rel="shortcut icon" type="image/png" href="{{ site.baseurl }}/{{ site.logo }}">
     <link rel="apple-touch-icon" href="{{ site.baseurl }}/{{ site.logo }}">
-
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BP4RDLKBFQ"></script>
     <link rel="stylesheet" href="{{ site.baseurl }}/{{ site.css }}">
 </head>
+
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1" && window.location.protocol !== "file:") {
+    gtag('config', 'G-BP4RDLKBFQ', {
+        ignore_referrer: 'true'
+    });
+}
+</script>
+
 <body>
     <!-- Main rendering target for the high-performance particle engine -->
     <canvas id="flowCanvas"></canvas>
